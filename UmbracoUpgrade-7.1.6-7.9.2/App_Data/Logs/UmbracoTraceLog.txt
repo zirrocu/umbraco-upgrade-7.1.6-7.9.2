@@ -1644,3 +1644,8 @@
 2018-03-04 12:06:46,529 [26] INFO  Umbraco.Core.PluginManager - [Thread 9] Starting resolution types of Umbraco.Core.Persistence.Mappers.BaseMapper
 2018-03-04 12:06:46,539 [26] INFO  Umbraco.Core.PluginManager - [Thread 9] Completed resolution of types of Umbraco.Core.Persistence.Mappers.BaseMapper, found 22 (took 10ms)
 2018-03-04 12:06:49,572 [26] INFO  umbraco.content - [Thread 16] Loading content from disk cache...
+2018-03-04 12:07:58,900 [26] INFO  Umbraco.Core.PluginManager - [Thread 15] Starting resolution types of Umbraco.Web.Trees.TreeController
+2018-03-04 12:07:58,900 [26] INFO  Umbraco.Core.PluginManager - [Thread 15] Completed resolution of types of Umbraco.Web.Trees.TreeController, found 4 (took 0ms)
+2018-03-04 12:08:25,150 [26] INFO  Umbraco.Web.Security.WebSecurity - [Thread 9] User Id: 0 logged in
+2018-03-04 12:08:59,667 [26] INFO  umbraco.BusinessLogic.Log - [Thread 29] Log scrubbed.  Removed all items older than 2018-01-03 12:08:59
+2018-03-04 12:08:59,667 [26] INFO  Umbraco.Core.UmbracoApplicationBase - [Thread 29] Application shutdown. Reason: ConfigurationChange

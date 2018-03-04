@@ -80,7 +80,8 @@ Umbraco.Sys.registerNamespace("Umbraco.Application");
             mainWindow: function() {
                 return top;
             },
-            mainTree: function() {
+            mainTree: function () {
+
                 var injector = getRootInjector();
                 var navService = injector.get("navigationService");
                 var appState = injector.get("appState");
@@ -177,23 +178,33 @@ Umbraco.Sys.registerNamespace("Umbraco.Application");
             appActions: function() {
                 var injector = getRootInjector();
                 var navService = injector.get("navigationService");
-
-                var _actions = {};
-                _actions.openDashboard = function(section){
-                    navService.changeSection(section);
+                var localizationService = injector.get("localizationService");
+                var usersResource = injector.get("usersResource");
+                //var appState = injector.get("appState");
+                var angularHelper = injector.get("angularHelper");
+                var $rootScope = injector.get("$rootScope");
+                
+                var actions = {
+                    openDashboard : function(section){
+                        navService.changeSection(section);
+                    },
+                    actionDisable: function () {
+                        localizationService.localize("defaultdialogs_confirmdisable").then(function (txtConfirmDisable) {
+                            var currentMenuNode = UmbClientMgr.mainTree().getActionNode();
+                            if (currentMenuNode) {
+                                if (confirm(txtConfirmDisable + ' "' + UmbClientMgr.mainTree().getActionNode().nodeName + '"?\n\n')) {
+                                    angularHelper.safeApply($rootScope, function () {
+                                        usersResource.disableUsers(currentMenuNode.nodeId).then(function () {
+                                            UmbClientMgr.mainTree().syncTree("-1," + currentMenuNode.nodeId, true);
+                                        });
+                                    });
+                                }
+                            }
+                        });
+                    }
                 };
 
-                return _actions;
-                //throw "Not implemented!";
-
-                ////if the main window has no actions, we'll create some
-                //if (this._appActions == null) {
-                //    if (typeof this.mainWindow().appActions == 'undefined') {
-                //        this._appActions = new Umbraco.Application.Actions();
-                //    }
-                //    else this._appActions = this.mainWindow().appActions;
-                //}
-                //return this._appActions;
+                return actions;                
             },
             uiKeys: function() {
                 
@@ -242,20 +253,32 @@ Umbraco.Sys.registerNamespace("Umbraco.Application");
 
                 //get our angular navigation service
                 var injector = getRootInjector();
+
+                var rootScope = injector.get("$rootScope");
+                var angularHelper = injector.get("angularHelper");
                 var navService = injector.get("navigationService");
+                var locationService = injector.get("$location");
 
-                //if the path doesn't start with "/" or with the root path then 
-                //prepend the root path
-                if (!strLocation.startsWith("/")) {
-                    strLocation = this._rootPath + "/" + strLocation;
-                }
-                else if (strLocation.length >= this._rootPath.length
-                    && strLocation.substr(0, this._rootPath.length) != this._rootPath) {
-                    strLocation = this._rootPath + "/" + strLocation;
-                }
+                var self = this;
 
-                navService.loadLegacyIFrame(strLocation);
+                angularHelper.safeApply(rootScope, function() {
+                    if (strLocation.startsWith("#")) {
+                        locationService.path(strLocation.trimStart("#")).search("");
+                    }
+                    else {
+                        //if the path doesn't start with "/" or with the root path then 
+                        //prepend the root path
+                        if (!strLocation.startsWith("/")) {
+                            strLocation = self._rootPath + "/" + strLocation;
+                        }
+                        else if (strLocation.length >= self._rootPath.length
+                            && strLocation.substr(0, self._rootPath.length) != self._rootPath) {
+                            strLocation = self._rootPath + "/" + strLocation;
+                        }
 
+                        navService.loadLegacyIFrame(strLocation);
+                    }
+                });
             },
             
             getFakeFrame : function() {
@@ -335,6 +358,34 @@ Umbraco.Sys.registerNamespace("Umbraco.Application");
                 this._modal.push(dialog);
                 return dialog;
             },
+            rootScope : function(){
+                return getRootScope();
+            },
+
+            /**
+            This will reload the content frame based on it's current route, if pathToMatch is specified it will only reload it if the current
+            location matches the path
+            */
+            reloadLocation: function(pathToMatch) {
+
+                var injector = getRootInjector();
+                var doChange = true;
+                if (pathToMatch) {
+                    var $location = injector.get("$location");
+                    var path = $location.path();
+                    if (path != pathToMatch) {
+                        doChange = false;
+                    }
+                }
+
+                if (doChange) {
+                    var $route = injector.get("$route");
+                    $route.reload();
+                    var $rootScope = injector.get("$rootScope");
+                    $rootScope.$apply();
+                }
+            },
+            
             closeModalWindow: function(rVal) {
                 
                 //get our angular navigation service
@@ -357,6 +408,11 @@ Umbraco.Sys.registerNamespace("Umbraco.Application");
 
                     //just call the native dialog close() method to remove the dialog
                     lastModal.close();
+
+                    //if it's the last one close them all
+                    if (this._modal.length == 0) {
+                        getRootScope().$emit("app.closeDialogs", undefined);
+                    }
                 }
                 else {
                     //instead of calling just the dialog service we funnel it through the global 
